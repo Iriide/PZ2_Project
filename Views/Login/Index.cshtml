@@ -1,0 +1,13 @@
+<a href="/login">Login</a>
+<a href="/register">Register</a>
+<a href="/data">Data</a>
+
+
+
+@if (ViewData.ContainsKey("username") && ViewData["username"] != null)
+{
+    <h2>@ViewData["Message"]</h2>
+    <p style="float:right;">Username: @ViewData["username"]</p>
+    <a href="/logout" style="float:right;">Logout</a>
+    <a href="/">Back to home</a>
+}

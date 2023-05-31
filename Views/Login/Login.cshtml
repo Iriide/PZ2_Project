@@ -1,0 +1,25 @@
+<a href="/" style="float:right;">Home</a>
+<h1>Login</h1>
+
+
+<form method="post" style="text-align: center;">
+    <label for="username" style="display: inline-block; width: 100px;">Login:</label>
+    <input type="text" id="username" name="username" /> <br />
+    <label for="password" style="display: inline-block; width: 100px;">Password:</label>
+    <input type="password" id="password" name="password" /> <br />
+    <input type="submit" value="Submit" asp-page-handler="Submit" />
+</form>
+
+
+@if (! ViewData.ContainsKey("username") && string.IsNullOrEmpty(ViewData["username"].ToString()))
+{
+    <h2>@ViewData["Message"]</h2>
+    <p >Username: @ViewData["username"]</p>
+}
+
+
+@* <form method="post">
+Login: <input type="text" id="username" name="username"/> <br/>
+Password: <input type="password" id="password" name="password"/> <br/>
+<input type="submit" value="Submit" asp-page-handler="Submit"/>
+</form> *@

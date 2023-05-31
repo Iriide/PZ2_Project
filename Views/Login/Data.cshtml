@@ -1,0 +1,30 @@
+<a href="/" style="float:right;">Home</a>
+<h1>Search</h1>
+
+
+
+
+@if (!(ViewData.ContainsKey("username") && ViewData["username"] != null))
+{
+    <h3>You must be logged in to view this page</h3>
+}
+else
+{
+    <form method="post" action="/Search">
+        <input type="text" name="search" />
+        <input type="submit" value="Search" />
+    </form>
+    <ul>
+    @foreach (String[] item in @ViewData["Games"] as List<String[]>)
+    {
+        <li>@item[1]: @item[2]</li>
+    }
+</ul>
+    <h>Logged in as @ViewData["username"]</h>
+}
+
+
+
+
+
+

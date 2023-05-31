@@ -1,0 +1,19 @@
+<a href="/" style="float:right;">Home</a>
+<h1>Register</h1>
+
+
+<form method="post" style="text-align: center;">
+    <label for="username" style="display: inline-block; width: 100px;">Login:</label>
+    <input type="text" id="username" name="username"/> <br/>
+    <label for="password1" style="display: inline-block; width: 100px;">Password:</label>
+    <input type="password" id="password1" name="password1"/> <br/>
+    <label for="password2" style="display: inline-block; width: 100px;">Confirm password:</label>
+    <input type="password" id="password2" name="password2"/> <br/>
+    <input type="submit" value="Submit" asp-page-handler="Submit"/>
+    @ViewData["Message"]
+</form>
+
+@if (ViewData.ContainsKey("username") && ViewData["username"] != null) {
+    <h2>@ViewData["Message"]</h2>
+    <p>Username: @ViewData["username"]</p>
+}
