@@ -15,32 +15,32 @@ internal class Program
         connection.Open();
         var Command = connection.CreateCommand();
 
-        string dropTable = "DROP TABLE IF EXISTS Warehouse; DROP TABLE IF EXISTS IsAvaiable; DROP TABLE IF EXISTS Games; ";
+        const string dropTable = "DROP TABLE IF EXISTS Warehouse; DROP TABLE IF EXISTS IsAvaiable; DROP TABLE IF EXISTS Games; ";
         Command.CommandText = dropTable;
         Command.ExecuteNonQuery();
 
         // string createTable = "DROP TABLE IF EXISTS Users; CREATE TABLE IF NOT EXISTS Users (id INTEGER PRIMARY KEY AUTOINCREMENT, Username TEXT NOT NULL, Password TEXT NOT NULL);";
-        string createTable = "CREATE TABLE IF NOT EXISTS Users (id INTEGER PRIMARY KEY AUTOINCREMENT, Username TEXT NOT NULL, Password TEXT NOT NULL);";
+        const string createTable = "CREATE TABLE IF NOT EXISTS Users (id INTEGER PRIMARY KEY AUTOINCREMENT, Username TEXT NOT NULL, Password TEXT NOT NULL);";
         Command.CommandText = createTable;
         Command.ExecuteNonQuery();
 
-        string gamesTable = "CREATE TABLE IF NOT EXISTS Games (id INTEGER PRIMARY KEY AUTOINCREMENT, Name TEXT NOT NULL, Description TEXT NOT NULL, Price REAL NOT NULL);";
+        const string gamesTable = "CREATE TABLE IF NOT EXISTS Games (id INTEGER PRIMARY KEY AUTOINCREMENT, Name TEXT NOT NULL, Description TEXT NOT NULL, Price REAL NOT NULL);";
         Command.CommandText = gamesTable;
         Command.ExecuteNonQuery();
 
-        string isAvaiableTable = "CREATE TABLE IF NOT EXISTS IsAvaiable (id INTEGER PRIMARY KEY AUTOINCREMENT, GameId INTEGER NOT NULL, Avaiable BOOLEAN NOT NULL, FOREIGN KEY(GameId) REFERENCES Games(id));";
+        const string isAvaiableTable = "CREATE TABLE IF NOT EXISTS IsAvaiable (id INTEGER PRIMARY KEY AUTOINCREMENT, GameId INTEGER NOT NULL, Avaiable BOOLEAN NOT NULL, FOREIGN KEY(GameId) REFERENCES Games(id));";
         Command.CommandText = isAvaiableTable;
         Command.ExecuteNonQuery();
 
-        string warehouseTable = "CREATE TABLE IF NOT EXISTS Warehouse (id INTEGER PRIMARY KEY AUTOINCREMENT, GameId INTEGER NOT NULL, Amount INTEGER NOT NULL, FOREIGN KEY(GameId) REFERENCES Games(id));";
+        const string warehouseTable = "CREATE TABLE IF NOT EXISTS Warehouse (id INTEGER PRIMARY KEY AUTOINCREMENT, GameId INTEGER NOT NULL, Amount INTEGER NOT NULL, FOREIGN KEY(GameId) REFERENCES Games(id));";
         Command.CommandText = warehouseTable;
         Command.ExecuteNonQuery();
 
         connection.Close();
 
-        readData("Data/games.csv", "Games", new string[] { "Name", "Description", "Price" });
-        readData("Data/isAvaiable.csv", "IsAvaiable", new string[] { "GameId", "Avaiable" });
-        readData("Data/warehouse.csv", "Warehouse", new string[] { "GameId", "Amount" });
+        ReadData("Data/games.csv", "Games", new string[] { "Name", "Description", "Price" });
+        ReadData("Data/isAvaiable.csv", "IsAvaiable", new string[] { "GameId", "Avaiable" });
+        ReadData("Data/warehouse.csv", "Warehouse", new string[] { "GameId", "Amount" });
 
         /* -------------------------------------------------------------------------- */
         /*                                     MVC                                    */
@@ -105,7 +105,7 @@ internal class Program
         app.Run();
     }
 
-    public static void readData(string path, string Table, string[] columns)
+    public static void ReadData(string path, string Table, string[] columns)
     {
         var connectionStringBuilder = new SqliteConnectionStringBuilder();
         connectionStringBuilder.DataSource = "db.db";
@@ -116,6 +116,7 @@ internal class Program
         while (!sr.EndOfStream)
         {
             string ? line = sr.ReadLine();
+            if(line == null) break;
             string[] values = line.Split(';');
             string insert = "INSERT INTO " + Table + " (";
             for (int i = 0; i < columns.Length; i++)
@@ -136,9 +137,9 @@ internal class Program
                 }
             }
             insert += ");";
-            var Command = connection.CreateCommand();
-            Command.CommandText = insert;
-            Command.ExecuteNonQuery();
+            var command = connection.CreateCommand();
+            command.CommandText = insert;
+            command.ExecuteNonQuery();
         }
         connection.Close();
 
