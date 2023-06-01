@@ -1,4 +1,4 @@
-﻿﻿using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
@@ -187,13 +187,10 @@ public class LoginController : Controller
     [Route("/Search")]
     public IActionResult Data(IFormCollection form)
     {
-        if (form is null)
-            return View();
         ViewData["username"] = HttpContext.Session.GetString("Username");
         if(string.IsNullOrEmpty(ViewData["username"]?.ToString()))
             return View();
-
-
+        
         using (var connection = new SqliteConnection("Data Source=" + data_base_name))
         {
             connection.Open();

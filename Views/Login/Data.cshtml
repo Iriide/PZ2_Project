@@ -4,7 +4,7 @@
 
 
 
-@if (!(ViewData.ContainsKey("username") && ViewData["username"] != null))
+@if (ViewData["username"] is null)
 {
     <h3>You must be logged in to view this page</h3>
 }

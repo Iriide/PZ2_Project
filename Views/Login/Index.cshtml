@@ -4,7 +4,7 @@
 
 
 
-@if (ViewData.ContainsKey("username") && ViewData["username"] != null)
+@if (ViewData["username"] is not null)
 {
     <h2>@ViewData["Message"]</h2>
     <p style="float:right;">Username: @ViewData["username"]</p>
