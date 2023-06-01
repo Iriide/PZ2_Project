@@ -11,10 +11,15 @@
 </form>
 
 
-@if (! ViewData.ContainsKey("username") && string.IsNullOrEmpty(ViewData["username"].ToString()))
+@if (!ViewData.ContainsKey("Username") && string.IsNullOrEmpty((string?)ViewData["Username"]))
 {
     <h2>@ViewData["Message"]</h2>
-    <p >Username: @ViewData["username"]</p>
+}
+
+@if (ViewData["username"] is not null)
+{
+    <h2>@ViewData["Message"]</h2>
+    <p>Username: @ViewData["Username"]</p>
 }
 
 

@@ -47,9 +47,6 @@ public class LoginController : Controller
     [Route("/login")]
     public IActionResult Login(IFormCollection form)
     {
-        if (form is null)
-            return View();
-
         using (var connection = new SqliteConnection("Data Source=" + data_base_name))
         {
             String username = form["username"].ToString();
@@ -58,9 +55,9 @@ public class LoginController : Controller
             connection.Open();
             var command = connection.CreateCommand();
             command.CommandText = "SELECT * FROM Users WHERE Username = @Username AND Password = @Password;";
-            command.Parameters.AddWithValue("@Username", form["username"].ToString());
-            command.Parameters.AddWithValue("@Password", MD5Hash(form["password"].ToString()));
-            System.Console.WriteLine(MD5Hash(form["password"].ToString()));
+            command.Parameters.AddWithValue("@Username", username);
+            command.Parameters.AddWithValue("@Password", MD5Hash(password));
+            Console.WriteLine(MD5Hash(password));
 
             var reader = command.ExecuteReader();
             if (reader.Read())
@@ -75,8 +72,9 @@ public class LoginController : Controller
             }
 
         }
-
-        if (!string.IsNullOrEmpty(TempData["Username"]?.ToString()))
+        
+        // What??
+        if (!string.IsNullOrEmpty((string?)TempData["Username"]))
         {
             ViewData["Message"] = "You have to be logged in to see this view";
         }
@@ -95,9 +93,6 @@ public class LoginController : Controller
     [Route("/register")]
     public IActionResult Register(IFormCollection form)
     {
-        if (form is null)
-            return View();
-
         using (var connection = new SqliteConnection("Data Source=" + data_base_name))
 
         {
@@ -165,7 +160,7 @@ public class LoginController : Controller
     public IActionResult Data()
     {
         ViewData["username"] = HttpContext.Session.GetString("Username");
-        if(string.IsNullOrEmpty(ViewData["username"]?.ToString()))
+        if(string.IsNullOrEmpty((string?)ViewData["username"]))
             return View();
 
         using (var connection = new SqliteConnection("Data Source=" + data_base_name))
