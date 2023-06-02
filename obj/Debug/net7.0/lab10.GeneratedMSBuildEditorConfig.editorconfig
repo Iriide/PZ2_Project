@@ -16,10 +16,6 @@ build_property.GenerateRazorMetadataSourceChecksumAttributes =
 build_property.MSBuildProjectDirectory = C:\Users\asiaw\Desktop\PZ2\lab10
 build_property._RazorSourceGeneratorDebug = 
 
-[C:/Users/asiaw/Desktop/PZ2/lab10/Views/Home/Index.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxJbmRleC5jc2h0bWw=
-build_metadata.AdditionalFiles.CssScope = 
-
 [C:/Users/asiaw/Desktop/PZ2/lab10/Views/Login/Data.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTG9naW5cRGF0YS5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 

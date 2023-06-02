@@ -1,4 +1,8 @@
 using Microsoft.Data.Sqlite;
+using System.Security.Cryptography;
+using System.Text;
+
+
 // dotnet add package Microsoft.EntityFrameworkCore.Sqlite && dotnet new mvc -o Mvc && dotnet dev-certs https --trust
 
 internal class Program
@@ -20,7 +24,7 @@ internal class Program
         Command.ExecuteNonQuery();
 
         // string createTable = "DROP TABLE IF EXISTS Users; CREATE TABLE IF NOT EXISTS Users (id INTEGER PRIMARY KEY AUTOINCREMENT, Username TEXT NOT NULL, Password TEXT NOT NULL);";
-        const string createTable = "CREATE TABLE IF NOT EXISTS Users (id INTEGER PRIMARY KEY AUTOINCREMENT, Username TEXT NOT NULL, Password TEXT NOT NULL);";
+        const string createTable = "CREATE TABLE IF NOT EXISTS Users (id INTEGER PRIMARY KEY AUTOINCREMENT, Username TEXT NOT NULL, Password TEXT NOT NULL, Privilege TEXT NOT NULL);";
         Command.CommandText = createTable;
         Command.ExecuteNonQuery();
 
@@ -35,6 +39,18 @@ internal class Program
         const string warehouseTable = "CREATE TABLE IF NOT EXISTS Warehouse (id INTEGER PRIMARY KEY AUTOINCREMENT, GameId INTEGER NOT NULL, Amount INTEGER NOT NULL, FOREIGN KEY(GameId) REFERENCES Games(id));";
         Command.CommandText = warehouseTable;
         Command.ExecuteNonQuery();
+        
+        const string adminQuery = "SELECT * FROM Users WHERE Username = \"admin\";";
+        Command.CommandText = adminQuery;
+        var reader = Command.ExecuteReader();
+        if (!reader.HasRows)
+        {
+            reader.Close();
+            string insertUser = "INSERT INTO Users (Username, Password, Privilege) VALUES ('admin', '" + MD5Hash("admin") + "', 'admin');";
+            Command.CommandText = insertUser;
+            Command.ExecuteNonQuery();
+        }
+        reader.Close();
 
         connection.Close();
 
@@ -103,6 +119,20 @@ internal class Program
         });
 
         app.Run();
+    }
+    private static string MD5Hash(string input)
+    {
+        using (var md5 = MD5.Create())
+        {
+            byte[] inputBytes = Encoding.ASCII.GetBytes(input);
+            byte[] hashBytes = md5.ComputeHash(inputBytes);
+            var sb = new StringBuilder();
+            for (int i = 0; i < hashBytes.Length; i++)
+            {
+                sb.Append(hashBytes[i].ToString("X2"));
+            }
+            return sb.ToString();
+        }
     }
 
     public static void ReadData(string path, string Table, string[] columns)

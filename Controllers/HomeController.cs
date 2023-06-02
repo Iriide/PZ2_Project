@@ -122,8 +122,9 @@ public class LoginController : Controller
             }
 
             // Register user
+
             var command = connection.CreateCommand();
-            command.CommandText = "INSERT INTO Users (Username, Password) VALUES (@Username, @Password);";
+            command.CommandText = "INSERT INTO Users (Username, Password, IsAdmin) VALUES (@Username, @Password, User);";
             command.Parameters.AddWithValue("@Username", username);
             command.Parameters.AddWithValue("@Password", MD5Hash(password));
 

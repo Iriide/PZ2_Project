@@ -18680,11 +18680,6 @@
       "FileKind": "mvc"
     },
     {
-      "FilePath": "c:\\Users\\asiaw\\Desktop\\PZ2\\lab10\\Views\\Home\\Index.cshtml",
-      "TargetPath": "Views\\Home\\Index.cshtml",
-      "FileKind": "mvc"
-    },
-    {
       "FilePath": "c:\\Users\\asiaw\\Desktop\\PZ2\\lab10\\Views\\Login\\Login.cshtml",
       "TargetPath": "Views\\Login\\Login.cshtml",
       "FileKind": "mvc"
