@@ -1,13 +1,19 @@
-<a href="/login">Login</a>
-<a href="/register">Register</a>
-<a href="/data">Data</a>
-
-
-
-@if (ViewData["username"] is not null)
-{
-    <h2>@ViewData["Message"]</h2>
-    <p style="float:right;">Username: @ViewData["username"]</p>
-    <a href="/logout" style="float:right;">Logout</a>
-    <a href="/">Back to home</a>
+﻿@{
+    ViewData["Title"] = "Home Page";
 }
+
+@if (ViewData["username"] is null)
+{
+    <div class="text-center">
+        <h1 class="display-4">Welcome</h1>
+        <p>To view available boardgames please log in.</p>
+    </div>
+}
+else
+{
+    <div class="text-center">
+        <h1 class="display-4">Welcome</h1>
+        <p>To view available boardgames please check the Data tab.</p>
+    </div>
+}
+
