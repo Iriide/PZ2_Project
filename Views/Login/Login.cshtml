@@ -1,20 +1,32 @@
 <a href="/" style="float:right;">Home</a>
-<h1>Login</h1>
+@if (ViewData["username"] is null)
+{
+    <h1>Login</h1>
+}
+else
+{
+    <h1>Logout</h1>
+}
 
 
-<form method="post" style="text-align: center;">
-    <label for="username" style="display: inline-block; width: 100px;">Login:</label>
-    <input type="text" id="username" name="username" /> <br />
-    <label for="password" style="display: inline-block; width: 100px;">Password:</label>
-    <input type="password" id="password" name="password" /> <br />
-    <input type="submit" value="Submit" asp-page-handler="Submit" />
-</form>
-
+@if (ViewData["username"] is null)
+{
+    <form method="post" style="text-align: center;">
+        <label for="username" style="display: inline-block; width: 100px;">Login:</label>
+        <input type="text" id="username" name="username" /> <br />
+        <label for="password" style="display: inline-block; width: 100px;">Password:</label>
+        <input type="password" id="password" name="password" /> <br />
+        <input type="submit" value="Submit" asp-page-handler="Submit" />
+    </form>
+}
 
 @if (ViewData["username"] is not null)
 {
     <h2>@ViewData["Message"]</h2>
     <p>Username: @ViewData["Username"]</p>
+    <p>
+        <a href="/logout">Logout</a>
+    </p>
 }
 else
 {

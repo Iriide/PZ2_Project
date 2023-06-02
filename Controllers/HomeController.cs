@@ -184,7 +184,7 @@ public class LoginController : Controller
 
     /* -------------------------------- Search data -------------------------------- */
     [HttpPost]
-    [Route("/Search")]
+    [Route("/data")]
     public IActionResult Data(IFormCollection form)
     {
         ViewData["username"] = HttpContext.Session.GetString("Username");
