@@ -18,6 +18,16 @@
                     {
                         <td>@Model.SelectedData.Rows[j][i]</td>
                     }
+                    <td>
+                        <form method="post" action="/Login/DeleteRow">
+                            <input type="hidden" name="tableName" value="@Model.SelectedData.TableName"/>
+                            @for (int i = 0; i < Model.SelectedData.ColumnNames.Count; i++)
+                            {
+                                <input type="hidden" name="columnValues[@i]" value="@Model.SelectedData.Rows[j][i]"/>
+                            }
+                            <button type="submit">Delete</button>
+                        </form>
+                    </td>
                 }
             </tr>
         }

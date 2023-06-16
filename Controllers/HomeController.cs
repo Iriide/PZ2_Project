@@ -54,7 +54,7 @@ public class LoginController : Controller
 
             connection.Open();
             var command = connection.CreateCommand();
-            command.CommandText = "SELECT * FROM Users WHERE Username = @Username AND Password = @Password;";
+            command.CommandText = "SELECT * FROM Users WHERE username = @Username AND password = @Password;";
             command.Parameters.AddWithValue("@Username", username);
             command.Parameters.AddWithValue("@Password", MD5Hash(password));
             Console.WriteLine(MD5Hash(password));
@@ -341,6 +341,47 @@ public class LoginController : Controller
                 ViewBag.Error = e.Message;
             }
             
+        }
+        return RedirectToAction("DataBaseEditor");
+    }
+    
+    public IActionResult DeleteRow(List<string> columnValues, string tableName)
+    {
+        using (var connection = new SqliteConnection("Data Source=" + data_base_name))
+        {
+            List<string> columnNames = tableName switch
+            {
+                "Users" => new List<string>() { "id", "username", "password", "role" },
+                "Boardgames" => new List<string>() { "id", "title", "description" },
+                "Tags" => new List<string>() { "id", "tag_name" },
+                "GameTags" => new List<string>() { "tag_id", "game_id" },
+                "Rental" => new List<string>() { "rental_game", "game_id", "boardgame_id" },
+                "RentedGames" => new List<string>() { "rented_game", "rented_by", "rented_from", "rented_to" },
+                _ => new List<string>() { "id", "username", "password", "role" }
+            };
+            connection.Open();
+            var command = connection.CreateCommand();
+            command.CommandText = "DELETE FROM " + tableName + " WHERE ";
+            for (int i = 0; i < columnNames.Count; i++)
+            {
+                command.CommandText += columnNames[i] + " = ";
+                if (columnValues[i] is null)
+                    command.CommandText += "NULL";
+                else
+                    command.CommandText += "'" + columnValues[i] + "'";
+                if (i != columnNames.Count - 1)
+                    command.CommandText += " AND ";
+            }
+            command.CommandText += ";";
+            // execute the command, if it fails add the error to ViewBag
+            try
+            {
+                command.ExecuteNonQuery();
+            }
+            catch (Exception e)
+            {
+                ViewBag.Error = e.Message;
+            }
         }
         return RedirectToAction("DataBaseEditor");
     }
