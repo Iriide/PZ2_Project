@@ -3,7 +3,7 @@
 @if (Model.SelectedData != null)
 {
     <table>
-        @for (int j=-1; j<Model.SelectedData.Rows.Count; j++)
+        @for (int j = -1; j < Model.SelectedData.Rows.Count; j++)
         {
             <tr>
                 @if (j == -1)
@@ -12,7 +12,8 @@
                     {
                         <td>@t</td>
                     }
-                }else 
+                }
+                else
                 {
                     for (int i = 0; i < Model.SelectedData.ColumnNames.Count; i++)
                     {
@@ -32,18 +33,18 @@
             </tr>
         }
     </table>
-    
+
     @using (Html.BeginForm("SendRequestToDatabase", "Login", FormMethod.Post))
     {
         <table>
             <tr>
                 <td>
-                    <input type="hidden" name="newValues[0]" value="@Model.SelectedData.TableName" />
+                    <input type="hidden" name="newValues[0]" value="@Model.SelectedData.TableName"/>
                 </td>
                 @for (int i = 0; i < Model.SelectedData.ColumnNames.Count; i++)
                 {
                     <td>
-                        <input type="text" name="newValues[@(i+1)]" placeholder="@Model.SelectedData.ColumnNames[i]"/>
+                        <input type="text" name="newValues[@(i + 1)]" placeholder="@Model.SelectedData.ColumnNames[i]"/>
                     </td>
                 }
                 <td>
@@ -52,6 +53,4 @@
             </tr>
         </table>
     }
-
 }
-

@@ -20,44 +20,44 @@ internal class Program
         using (var command = connection.CreateCommand())
         {
             // Create Users table
-                command.CommandText = @"
+            command.CommandText = @"
                     CREATE TABLE IF NOT EXISTS Users (
                         id INTEGER PRIMARY KEY,
                         username TEXT,
                         password TEXT,
                         role TEXT
                     );";
-                command.ExecuteNonQuery();
+            command.ExecuteNonQuery();
 
-                // Create Boardgames table
-                command.CommandText = @"
+            // Create Boardgames table
+            command.CommandText = @"
                     CREATE TABLE IF NOT EXISTS Boardgames (
                         id INTEGER PRIMARY KEY,
                         title TEXT UNIQUE,
                         description TEXT
                     );";
-                command.ExecuteNonQuery();
+            command.ExecuteNonQuery();
 
-                // Create Tags table
-                command.CommandText = @"
+            // Create Tags table
+            command.CommandText = @"
                     CREATE TABLE IF NOT EXISTS Tags (
                         id INTEGER PRIMARY KEY,
                         tag_name TEXT UNIQUE
                     );";
-                command.ExecuteNonQuery();
+            command.ExecuteNonQuery();
 
-                // Create GameTags table
-                command.CommandText = @"
+            // Create GameTags table
+            command.CommandText = @"
                     CREATE TABLE IF NOT EXISTS GameTags (
                         tag_id INTEGER,
                         game_id INTEGER,
                         FOREIGN KEY (tag_id) REFERENCES Tags(id),
                         FOREIGN KEY (game_id) REFERENCES Boardgames(id)
                     );";
-                command.ExecuteNonQuery();
+            command.ExecuteNonQuery();
 
-                // Create Rental table
-                command.CommandText = @"
+            // Create Rental table
+            command.CommandText = @"
                     CREATE TABLE IF NOT EXISTS Rental (
                         rental_game INTEGER PRIMARY KEY,
                         game_id INTEGER,
@@ -65,10 +65,10 @@ internal class Program
                         FOREIGN KEY (game_id) REFERENCES Boardgames(id),
                         FOREIGN KEY (boardgame_id) REFERENCES Boardgames(id)
                     );";
-                command.ExecuteNonQuery();
+            command.ExecuteNonQuery();
 
-                // Create RentedGames table
-                command.CommandText = @"
+            // Create RentedGames table
+            command.CommandText = @"
                     CREATE TABLE IF NOT EXISTS RentedGames (
                         rented_game INTEGER,
                         rented_by INTEGER,
@@ -77,27 +77,28 @@ internal class Program
                         FOREIGN KEY (rented_game) REFERENCES Rental(rental_game),
                         FOREIGN KEY (rented_by) REFERENCES Users(id)
                     );";
-                command.ExecuteNonQuery();
-            
-                const string adminQuery = "SELECT * FROM Users WHERE Username = \"admin\";";
-                command.CommandText = adminQuery;
-                var reader = command.ExecuteReader();
-                if (!reader.HasRows)
-                {
-                    reader.Close();
-                    string insertUser = "INSERT INTO Users (username, password, role) VALUES ('admin','" + MD5Hash("admin") + "', 'admin');";
-                    command.CommandText = insertUser;
-                    command.ExecuteNonQuery();
-                }
+            command.ExecuteNonQuery();
+
+            const string adminQuery = "SELECT * FROM Users WHERE Username = \"admin\";";
+            command.CommandText = adminQuery;
+            var reader = command.ExecuteReader();
+            if (!reader.HasRows)
+            {
                 reader.Close();
+                string insertUser = "INSERT INTO Users (username, password, role) VALUES ('admin','" +
+                                    MD5Hash("admin") + "', 'admin');";
+                command.CommandText = insertUser;
+                command.ExecuteNonQuery();
+            }
+
+            reader.Close();
         }
-        
-        
+
 
         connection.Close();
 
-        ReadData("Data/games.csv", "Boardgames",  new string[] { "title", "description" });
-        ReadData("Data/tags.csv", "Tags",  new string[] { "tag_name" });
+        ReadData("Data/games.csv", "Boardgames", new string[] { "title", "description" });
+        ReadData("Data/tags.csv", "Tags", new string[] { "tag_name" });
         //readData("Data/game_tags.csv", "GameTags", false, new string[] { "tag_id", "game_id" });
         //readData("Data/rental.csv", "Rental", true, new string[] { "game_id", "boardgame_id" });
 
@@ -115,8 +116,9 @@ internal class Program
         builder.Services.AddSession(options =>
         {
             options.IdleTimeout = TimeSpan.FromSeconds(1000);
-            options.Cookie.HttpOnly = true;//plik cookie jest niedostępny przez skrypt po stronie klienta
-            options.Cookie.IsEssential = true;//pliki cookie sesji będą zapisywane dzięki czemu sesje będzie mogła być śledzona podczas nawigacji lub przeładowania strony
+            options.Cookie.HttpOnly = true; //plik cookie jest niedostępny przez skrypt po stronie klienta
+            options.Cookie.IsEssential =
+                true; //pliki cookie sesji będą zapisywane dzięki czemu sesje będzie mogła być śledzona podczas nawigacji lub przeładowania strony
         });
         //KONIEC
 
@@ -163,6 +165,7 @@ internal class Program
 
         app.Run();
     }
+
     private static string MD5Hash(string input)
     {
         using (var md5 = MD5.Create())
@@ -174,6 +177,7 @@ internal class Program
             {
                 sb.Append(hashBytes[i].ToString("X2"));
             }
+
             return sb.ToString();
         }
     }
@@ -188,8 +192,8 @@ internal class Program
         StreamReader sr = new StreamReader(path);
         while (!sr.EndOfStream)
         {
-            string ? line = sr.ReadLine();
-            if(line == null) break;
+            string? line = sr.ReadLine();
+            if (line == null) break;
             string[] values = line.Split(';');
             string insert = "INSERT INTO " + Table + " (";
             for (int i = 0; i < columns.Length; i++)
@@ -200,6 +204,7 @@ internal class Program
                     insert += ", ";
                 }
             }
+
             insert += ") VALUES (";
             for (int i = 0; i < values.Length; i++)
             {
@@ -209,21 +214,20 @@ internal class Program
                     insert += ", ";
                 }
             }
+
             insert += ");";
             try
             {
                 using var command = connection.CreateCommand();
                 command.CommandText = insert;
                 command.ExecuteNonQuery();
-            }catch(SqliteException e)
+            }
+            catch (SqliteException e)
             {
                 Console.WriteLine(e.Message);
             }
-            
         }
+
         connection.Close();
-
-
     }
-
 }

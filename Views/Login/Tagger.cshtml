@@ -1,0 +1,33 @@
+@model TaggerModel
+
+@{
+    ViewBag.Title = "Tagger";
+}
+
+<h2>Tagger</h2>
+
+@using (Html.BeginForm("TaggerAdd", "Login", FormMethod.Post))
+{
+    <div class="form-group">
+        <div class="row">
+            <div class="col-md-6">
+                @Html.LabelFor(m => m.Boardgame, "Boardgame name")
+                @Html.DropDownListFor(m => m.Boardgame, Model.BoardgameList, "-- Select --", new { @class = "form-control" })
+            </div>
+            <div class="col-md-6">
+                @Html.LabelFor(m => m.Tag, "Second Dropdown")
+                @Html.DropDownListFor(m => m.Tag, Model.TagList, "-- Select --", new { @class = "form-control" })
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <button type="submit" class="btn btn-primary">Add</button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(ViewBag.Error))
+{
+    <p>@ViewBag.Error</p>
+}

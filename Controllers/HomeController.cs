@@ -4,6 +4,7 @@ using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
 using lab10.Models;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace lab10.Controllers;
 
@@ -92,15 +93,77 @@ public class LoginController : Controller
             {
                 ViewData["Message"] = "Invalid username or password";
             }
-
         }
-        
+
         // What??
         if (!string.IsNullOrEmpty((string?)TempData["Username"]))
         {
             ViewData["Message"] = "You have to be logged in to see this view";
         }
+
         return View();
+    }
+
+    public IActionResult Tagger()
+    {
+        TaggerModel model = new TaggerModel();
+        using (var connection = new SqliteConnection("Data Source=" + data_base_name))
+        {
+            connection.Open();
+            var command = connection.CreateCommand();
+            command.CommandText = "SELECT * FROM Boardgames;";
+            var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                model.BoardgameList.Add(new SelectListItem()
+                {
+                    Value = reader.GetString(0),
+                    Text = reader.GetString(1),
+                });
+            }
+
+            connection.Close();
+            connection.Open();
+            command.CommandText = "SELECT * FROM Tags;";
+            reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                model.TagList.Add(new SelectListItem()
+                {
+                    Value = reader.GetString(0),
+                    Text = reader.GetString(1)
+                });
+            }
+        }
+
+        return View(model);
+    }
+
+    [HttpPost]
+    public IActionResult TaggerAdd(IFormCollection form)
+    {
+        var target_game_id = form["Boardgame"].ToString();
+        var target_tag_id = form["Tag"].ToString();
+
+        using (var connection = new SqliteConnection("Data Source=" + data_base_name))
+        {
+            connection.Open();
+            var command = connection.CreateCommand();
+            command.CommandText = "INSERT INTO GameTags (tag_id, game_id) VALUES (@TagId, @BoardgameId);";
+            command.Parameters.AddWithValue("@BoardgameId", target_game_id);
+            command.Parameters.AddWithValue("@TagId", target_tag_id);
+            try
+            {
+                command.ExecuteNonQuery();
+            }
+            catch (Exception e)
+            {
+                // add to ViewBag
+                ViewBag.Error = e.Message;
+            }
+        }
+
+        return RedirectToAction("Tagger");
     }
 
     /* -------------------------------- Register -------------------------------- */
@@ -118,7 +181,6 @@ public class LoginController : Controller
         using (var connection = new SqliteConnection("Data Source=" + data_base_name))
 
         {
-
             String username = form["username"].ToString();
             String password = form["password1"].ToString();
 
@@ -164,7 +226,7 @@ public class LoginController : Controller
         DatabaseEditorModel model = new DatabaseEditorModel();
         return View(model);
     }
-    
+
     [HttpPost]
     [Route("/databaseeditor")]
     public IActionResult DataBaseEditor(IFormCollection form)
@@ -172,7 +234,7 @@ public class LoginController : Controller
         DatabaseEditorModel model = new DatabaseEditorModel();
         string target = form["SelectedTable"].ToString();
         List<List<string>> formData = new List<List<string>>();
-        using(var connection = new SqliteConnection("Data Source=" + data_base_name))
+        using (var connection = new SqliteConnection("Data Source=" + data_base_name))
         {
             switch (target)
             {
@@ -200,6 +262,7 @@ public class LoginController : Controller
                     formData.Add(new List<string>() { "rented_game", "rented_by", "rented_from", "rented_to" });
                     break;
             }
+
             connection.Open();
             var command = connection.CreateCommand();
             command.CommandText = "SELECT * FROM " + target + ";";
@@ -207,16 +270,18 @@ public class LoginController : Controller
             while (reader.Read())
             {
                 var rowData = new String[reader.FieldCount];
-                for(int i = 0; i < reader.FieldCount; i++)
+                for (int i = 0; i < reader.FieldCount; i++)
                 {
                     rowData[i] = reader.GetString(i);
-                } 
+                }
+
                 formData.Add(rowData.ToList());
             }
 
             model.ProcessRawData(formData, target);
             model.SelectedTable = target;
         }
+
         return View("DataBaseBrowser", model);
     }
 
@@ -231,11 +296,10 @@ public class LoginController : Controller
             {
                 sb.Append(hashBytes[i].ToString("X2"));
             }
+
             return sb.ToString();
         }
     }
-
-
 
 
     /* -------------------------------- View data ------------------------------- */
@@ -243,8 +307,10 @@ public class LoginController : Controller
     public IActionResult Browser()
     {
         ViewData["username"] = HttpContext.Session.GetString("Username");
-        if(string.IsNullOrEmpty((string?)ViewData["username"]))
+        if (string.IsNullOrEmpty((string?)ViewData["username"]))
             return View();
+
+        GameBrowserModel model = new GameBrowserModel();
 
         using (var connection = new SqliteConnection("Data Source=" + data_base_name))
         {
@@ -253,16 +319,28 @@ public class LoginController : Controller
             command.CommandText = "SELECT * FROM Boardgames";
             var reader = command.ExecuteReader();
 
-            List<String[]> data = new List<String[]>();
             while (reader.Read())
             {
-                var rowData = new String[] { reader.GetInt32(0).ToString(), reader.GetString(1), reader.GetString(2) };
-                data.Add(rowData);
+                using var connection2 = new SqliteConnection("Data Source=" + data_base_name);
+                connection2.Open();
+                var command2 = connection2.CreateCommand();
+                command2.CommandText =
+                    "SELECT tag_name FROM Tags INNER JOIN GameTags ON Tags.id = GameTags.tag_id WHERE GameTags.game_id = @GameId;";
+                command2.Parameters.AddWithValue("@GameId", reader.GetInt32(0));
+                var reader2 = command2.ExecuteReader();
+                List<string> tags = new List<string>();
+                while (reader2.Read())
+                {
+                    tags.Add(reader2.GetString(0));
+                }
+
+                model.AllGames.Add(new GameBrowserModel.TaggedGame(reader.GetString(1), reader.GetString(2), tags));
             }
-            
-            ViewData["Games"] = data;
         }
-        return View();
+
+        model.DisplayedGames = model.AllGames;
+
+        return View(model);
     }
 
     /* -------------------------------- Search data -------------------------------- */
@@ -271,9 +349,9 @@ public class LoginController : Controller
     public IActionResult Browser(IFormCollection form)
     {
         ViewData["username"] = HttpContext.Session.GetString("Username");
-        if(string.IsNullOrEmpty(ViewData["username"]?.ToString()))
+        if (string.IsNullOrEmpty(ViewData["username"]?.ToString()))
             return View();
-        
+
         using (var connection = new SqliteConnection("Data Source=" + data_base_name))
         {
             connection.Open();
@@ -288,13 +366,12 @@ public class LoginController : Controller
                 var rowData = new String[] { reader.GetInt32(0).ToString(), reader.GetString(1), reader.GetString(2) };
                 data.Add(rowData);
             }
-            
+
             ViewData["Games"] = data;
         }
+
         return View();
     }
-
-
 
 
     /* ---------------------------------- Error --------------------------------- */
@@ -331,10 +408,11 @@ public class LoginController : Controller
                 case "RentedGames":
                     columnNames = new List<string>() { "rented_game", "rented_by", "rented_from", "rented_to" };
                     break;
-                default:   
+                default:
                     columnNames = new List<string>() { "id", "username", "password", "role" };
                     break;
             }
+
             connection.Open();
             var command = connection.CreateCommand();
             command.CommandText = "INSERT INTO " + newValues[0] + "(";
@@ -344,6 +422,7 @@ public class LoginController : Controller
                 if (i != columnNames.Count - 1)
                     command.CommandText += ", ";
             }
+
             command.CommandText += ") VALUES (";
             for (int i = 1; i < newValues.Count; i++)
             {
@@ -353,7 +432,7 @@ public class LoginController : Controller
                         command.CommandText += "NULL";
                     else
                         command.CommandText += "'" + MD5Hash(newValues[i]) + "'";
-                    if( i != newValues.Count - 1)
+                    if (i != newValues.Count - 1)
                         command.CommandText += ", ";
                 }
                 else
@@ -365,8 +444,8 @@ public class LoginController : Controller
                     if (i != newValues.Count - 1)
                         command.CommandText += ", ";
                 }
-                
             }
+
             command.CommandText += ");";
             // execute the command, if it fails add the error to ViewBag
             try
@@ -377,11 +456,11 @@ public class LoginController : Controller
             {
                 ViewBag.Error = e.Message;
             }
-            
         }
+
         return RedirectToAction("DataBaseEditor");
     }
-    
+
     public IActionResult DeleteRow(List<string> columnValues, string tableName)
     {
         using (var connection = new SqliteConnection("Data Source=" + data_base_name))
@@ -409,6 +488,7 @@ public class LoginController : Controller
                 if (i != columnNames.Count - 1)
                     command.CommandText += " AND ";
             }
+
             command.CommandText += ";";
             // execute the command, if it fails add the error to ViewBag
             try
@@ -420,6 +500,40 @@ public class LoginController : Controller
                 ViewBag.Error = e.Message;
             }
         }
+
         return RedirectToAction("DataBaseEditor");
+    }
+
+    public IActionResult RemoveTag(IFormCollection form)
+    {
+        using (var connection = new SqliteConnection("Data Source=" + data_base_name))
+        {
+            connection.Open();
+            var command = connection.CreateCommand();
+            // we have the tag name and thr game name, we need to find the tag id and the game id
+            command.CommandText = "SELECT id FROM Tags WHERE tag_name = '" + form["tagName"] + "';";
+            var reader = command.ExecuteReader();
+            reader.Read();
+            int tag_id = reader.GetInt32(0);
+            reader.Close();
+            command.CommandText = "SELECT id FROM Boardgames WHERE title = '" + form["boardGameName"] + "';";
+            reader = command.ExecuteReader();
+            reader.Read();
+            int game_id = reader.GetInt32(0);
+            reader.Close();
+            // now we have the tag id and the game id, we can delete the row from GameTags
+            command.CommandText = "DELETE FROM GameTags WHERE tag_id = " + tag_id + " AND game_id = " + game_id + ";";
+            // execute the command, if it fails add the error to ViewBag
+            try
+            {
+                command.ExecuteNonQuery();
+            }
+            catch (Exception e)
+            {
+                ViewBag.Error = e.Message;
+            }
+        }
+
+        return RedirectToAction("Browser");
     }
 }

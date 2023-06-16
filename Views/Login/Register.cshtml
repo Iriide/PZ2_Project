@@ -13,7 +13,8 @@
     @ViewData["Message"]
 </form>
 
-@if (ViewData.ContainsKey("username") && ViewData["username"] != null) {
+@if (ViewData.ContainsKey("username") && ViewData["username"] != null)
+{
     <h2>@ViewData["Message"]</h2>
     <p>Username: @ViewData["username"]</p>
 }

@@ -10,6 +10,7 @@ public class DatabaseEditorModel
         public List<string> ColumnNames;
         public List<List<string>> Rows;
     }
+
     public List<SelectListItem> TableList = new List<SelectListItem>
     {
         new SelectListItem { Value = "Users", Text = "Users" },
@@ -19,6 +20,7 @@ public class DatabaseEditorModel
         new SelectListItem { Value = "Rental", Text = "Rental" },
         new SelectListItem { Value = "RentedGames", Text = "RentedGames" }
     };
+
     public string SelectedTable { get; set; }
     public TableData SelectedData { get; set; }
 
