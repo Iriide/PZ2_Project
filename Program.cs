@@ -61,9 +61,7 @@ internal class Program
                     CREATE TABLE IF NOT EXISTS Rental (
                         rental_game INTEGER PRIMARY KEY,
                         game_id INTEGER,
-                        boardgame_id INTEGER,
-                        FOREIGN KEY (game_id) REFERENCES Boardgames(id),
-                        FOREIGN KEY (boardgame_id) REFERENCES Boardgames(id)
+                        FOREIGN KEY (game_id) REFERENCES Boardgames(id)
                     );";
             command.ExecuteNonQuery();
 

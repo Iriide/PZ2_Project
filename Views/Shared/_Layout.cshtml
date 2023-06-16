@@ -46,6 +46,12 @@
                             <a class="nav-link text-dark" asp-area="" asp-controller="Login" asp-action="Login">Logout</a>
                         </li>
                     }
+                    @if (Context.Session.GetString("Username") is not null)
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Login" asp-action="RentalManager">Rental service</a>
+                        </li>
+                    }
                     @if (Context.Session.GetString("Username") is not null && Context.Session.GetString("Admin") == "true")
                     {
                         <li class="nav-item">

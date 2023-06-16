@@ -256,7 +256,7 @@ public class LoginController : Controller
                     break;
 
                 case "Rental":
-                    formData.Add(new List<string>() { "rental_game", "game_id", "boardgame_id" });
+                    formData.Add(new List<string>() { "rental_game", "game_id" });
                     break;
 
                 case "RentedGames":
@@ -419,7 +419,42 @@ public class LoginController : Controller
         return RedirectToAction("Browser");
     }
 
+    public IActionResult RentalManager()
+    {
+        RentalManagerModel model = new RentalManagerModel();
+        using (var connection = new SqliteConnection("Data Source=" + data_base_name))
+        {
+            connection.Open();
+            var command = connection.CreateCommand();
+            command.CommandText = "SELECT * FROM Boardgames";
+            var reader = command.ExecuteReader();
+            // add all the boardgames to the model.AllBoardgames list (string, int) tuples
+            while (reader.Read())
+            {
+                model.AllBoardgames.Add((reader.GetString(1), reader.GetInt32(0)));
+            }
+            model.AllBoardgamesToSelectList();
+        }
 
+        using (var connection = new SqliteConnection("Data Source=" + data_base_name))
+        {
+            connection.Open();
+            var command = connection.CreateCommand();
+            command.CommandText = "SELECT * FROM Rental";
+            var reader = command.ExecuteReader();
+            // the games are received as rental_game_id and game_id. We need to change the game_id to the game name using the model.AllBoardgames list
+            while (reader.Read())
+            {
+                var rentalGameId = reader.GetInt32(0);
+                var gameId = reader.GetInt32(1);
+                var gameName = model.AllBoardgames.Find(x => x.Item2 == gameId).Item1;
+                model.RentalGames.Add((gameName, rentalGameId));
+            }
+        }
+        return View(model);
+    }
+    
+    
     /* ---------------------------------- Error --------------------------------- */
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
@@ -449,7 +484,7 @@ public class LoginController : Controller
                     columnNames = new List<string>() { "tag_id", "game_id" };
                     break;
                 case "Rental":
-                    columnNames = new List<string>() { "rental_game", "game_id", "boardgame_id" };
+                    columnNames = new List<string>() { "rental_game", "game_id" };
                     break;
                 case "RentedGames":
                     columnNames = new List<string>() { "rented_game", "rented_by", "rented_from", "rented_to" };
@@ -517,7 +552,7 @@ public class LoginController : Controller
                 "Boardgames" => new List<string>() { "id", "title", "description" },
                 "Tags" => new List<string>() { "id", "tag_name" },
                 "GameTags" => new List<string>() { "tag_id", "game_id" },
-                "Rental" => new List<string>() { "rental_game", "game_id", "boardgame_id" },
+                "Rental" => new List<string>() { "rental_game", "game_id" },
                 "RentedGames" => new List<string>() { "rented_game", "rented_by", "rented_from", "rented_to" },
                 _ => new List<string>() { "id", "username", "password", "role" }
             };
@@ -581,5 +616,131 @@ public class LoginController : Controller
         }
 
         return RedirectToAction("Browser");
+    }
+
+    public IActionResult AddRentalGame(IFormCollection form)
+    {
+        using (var connection = new SqliteConnection("Data Source=" + data_base_name))
+        {
+            connection.Open();
+            var command = connection.CreateCommand();
+            command.CommandText = "INSERT INTO Rental(game_id) VALUES ('" + form["GameToAdd"] + "');";
+            try
+            {
+                command.ExecuteNonQuery();
+            }
+            catch (Exception e)
+            {
+                ViewBag.Error = e.Message;
+            }
+        }
+
+        return RedirectToAction("RentalManager");
+    }
+
+    public IActionResult RentGame(IFormCollection form)
+    {
+        GameRentingViewModel model = new GameRentingViewModel();
+        var targetGame = form["elementId"].ToString();
+        if(TempData["GameId"] != null && targetGame == "")
+        {
+            targetGame = TempData["GameId"].ToString();
+            ViewBag.Error = "Invalid date!";
+        }
+        else
+        {
+            TempData["GameId"] = targetGame;
+        }
+        model.GameId = Convert.ToInt32(targetGame);
+
+        using (var connection = new SqliteConnection("Data Source=" + data_base_name))
+        {
+            connection.Open();
+            var command = connection.CreateCommand();
+            // select all games from RentedGames where the rented_game id is equal to the id of the game we want to rent
+            command.CommandText = "SELECT * FROM RentedGames WHERE rented_game = " + targetGame + ";";
+            var reader = command.ExecuteReader();
+            // if the reader has any rows add them to the model
+            while (reader.Read())
+            {
+                var user_id = reader.GetInt32(1);
+                string user_name;
+                using (var connection2 = new SqliteConnection("Data Source=" + data_base_name))
+                {
+                    connection2.Open();
+                    var command2 = connection2.CreateCommand();
+                    command2.CommandText = "SELECT username FROM Users WHERE id = " + user_id + ";";
+                    var reader2 = command2.ExecuteReader();
+                    reader2.Read();
+                    user_name = reader2.GetString(0);
+                    reader2.Close();
+                }
+                model.Reservations.Add(new Reservation()
+                {
+                    ReservationId = Convert.ToInt32(reader.GetString(0)),
+                    User = user_name,
+                    StartDate = Convert.ToDateTime(reader.GetString(2)),
+                    FinishDate = Convert.ToDateTime(reader.GetString(3)),
+                });
+            }
+        }
+
+        return View(model);
+    }
+
+    public IActionResult ReserveGame(IFormCollection form)
+    {
+        //check if there isnt already a reservation for this game in this time
+        var StartDate = Convert.ToDateTime(form["StartDate"]);
+        var FinishDate = Convert.ToDateTime(form["FinishDate"]);
+        var targetGame = form["gameId"].ToString();
+        
+        using (var connection = new SqliteConnection("Data Source=" + data_base_name))
+        {
+            connection.Open();
+            var command = connection.CreateCommand();
+            command.CommandText = "SELECT * FROM RentedGames WHERE rented_game = " + targetGame + ";";
+            var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                var startDate = Convert.ToDateTime(reader.GetString(2).ToString());
+                var finishDate = Convert.ToDateTime(reader.GetString(3));
+                if (StartDate >= startDate && StartDate <= finishDate)
+                {
+                    ViewBag.Error = "There is already a reservation for this game in this time";
+                    return RedirectToAction("RentGame", new { elementId = targetGame });
+                }
+                if (FinishDate >= startDate && FinishDate <= finishDate)
+                {
+                    ViewBag.Error = "There is already a reservation for this game in this time";
+                    return RedirectToAction("RentGame", new { elementId = targetGame });
+                }
+            }
+            // if there is no reservation for this game in this time, add the reservation
+            reader.Close();
+            // get the id of the user from session 
+            var username = HttpContext.Session.GetString("Username");
+            command.CommandText = "SELECT id FROM Users WHERE username = '" + username + "';";
+            reader = command.ExecuteReader();
+            reader.Read();
+            var userId = reader.GetInt32(0);
+            reader.Close();
+            // add the reservation
+            var startDateString = StartDate.ToString("yyyy-MM-dd");
+            var finishDateString = FinishDate.ToString("yyyy-MM-dd");
+            command.CommandText = "INSERT INTO RentedGames(rented_game, rented_by, rented_from, rented_to) VALUES (" + targetGame + ", " + userId + ", '" + startDateString + "', '" + finishDateString + "');";
+            try
+            {
+                command.ExecuteNonQuery();
+            }
+            catch (Exception e)
+            {
+                ViewBag.Error = e.Message;
+            }
+        }
+        
+        
+
+        return RedirectToAction("RentalManager");
     }
 }
