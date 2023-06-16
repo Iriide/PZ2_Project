@@ -1,14 +1,22 @@
 @model DatabaseEditorModel
 
-@using (Html.BeginForm("DataBaseEditor", "Login", FormMethod.Post))
+@if (Context.Session.GetString("Username") is null || Context.Session.GetString("Admin") != "true")
 {
-    @Html.LabelFor(model => model.SelectedTable, "Select an item:")
-    @Html.DropDownListFor(model => model.SelectedTable, Model.TableList, "Please select an item", new { @class = "form-control" })
-
-    <br/>
-
-    <input type="submit" value="Submit" class="btn btn-primary"/>
+    <h3>You must be logged in and be an admin to view this page</h3>
 }
+else
+{
+    @using (Html.BeginForm("DataBaseEditor", "Login", FormMethod.Post))
+    {
+        @Html.LabelFor(model => model.SelectedTable, "Select an item:")
+        @Html.DropDownListFor(model => model.SelectedTable, Model.TableList, "Please select an item", new { @class = "form-control" })
+
+        <br/>
+
+        <input type="submit" value="Submit" class="btn btn-primary"/>
+    }
+}
+
 
 @if (!string.IsNullOrEmpty(ViewBag.Error))
 {

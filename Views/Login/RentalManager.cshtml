@@ -1,39 +1,52 @@
 @model RentalManagerModel
 
-@using (Html.BeginForm("AddRentalGame", "Login", FormMethod.Post))
+@if (Context.Session.GetString("Username") is null || Context.Session.GetString("Admin") != "true"){}
+else
 {
-    <div>
-        @Html.LabelFor(model => model.GameToAdd, "Select a game:")
-        @Html.DropDownListFor(model => model.GameToAdd, Model.BoardgameList, "Please select a game", new { @class = "form-control" })
-        <input type="submit" value="Add" class="btn btn-primary ml-2" />
-    </div>
+    @using (Html.BeginForm("AddRentalGame", "Login", FormMethod.Post))
+    {
+        <div>
+            @Html.LabelFor(model => model.GameToAdd, "Select a game:")
+            @Html.DropDownListFor(model => model.GameToAdd, Model.BoardgameList, "Please select a game", new { @class = "form-control" })
+            <input type="submit" value="Add" class="btn btn-primary ml-2" />
+        </div>
+    }
 }
 
-@if (Model.RentalGames.Any())
+
+@if (Context.Session.GetString("Username") is null)
 {
-    <table class="mt-4">
-        <tr>
-            <th>Game Id</th>
-            <th>Game Name</th>
-            <th>Rent the Game</th>
-        </tr>
-        @foreach (var element in Model.RentalGames)
-        {
-            <tr>
-                <td>@element.Item2</td>
-                <td>@element.Item1</td>
-                <td>
-                    @using (Html.BeginForm("RentGame", "Login", FormMethod.Post))
-                    {
-                        <input type="hidden" name="elementId" value="@element.Item2" />
-                        <input type="submit" value="Rent" class="btn btn-primary" />
-                    }
-                </td>
-            </tr>
-        }
-    </table>
+    <h3>You must be logged in to view this page</h3>
 }
 else
 {
-    <p>No rental games available.</p>
+    @if (Model.RentalGames.Any())
+    {
+        <table class="mt-4">
+            <tr>
+                <th>Game Id</th>
+                <th>Game Name</th>
+                <th>Rent the Game</th>
+            </tr>
+            @foreach (var element in Model.RentalGames)
+            {
+                <tr>
+                    <td>@element.Item2</td>
+                    <td>@element.Item1</td>
+                    <td>
+                        @using (Html.BeginForm("RentGame", "Login", FormMethod.Post))
+                        {
+                            <input type="hidden" name="elementId" value="@element.Item2" />
+                            <input type="submit" value="Rent" class="btn btn-primary" />
+                        }
+                    </td>
+                </tr>
+            }
+        </table>
+    }
+    else
+    {
+        <p>No rental games available.</p>
+    }
 }
+

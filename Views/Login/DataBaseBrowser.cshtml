@@ -1,6 +1,8 @@
 @model DatabaseEditorModel
-
-@if (Model.SelectedData != null)
+@if (Context.Session.GetString("Username") is null || Context.Session.GetString("Admin") != "true")
+{
+    <h3>You must be logged in and be an admin to view this page</h3>
+}else if (Model.SelectedData != null)
 {
     <table>
         @for (int j = -1; j < Model.SelectedData.Rows.Count; j++)

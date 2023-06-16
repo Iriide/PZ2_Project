@@ -4,47 +4,63 @@
     ViewBag.Title = "Game Renting";
 }
 
-<h2>Game Renting</h2>
 
-@using (Html.BeginForm("ReserveGame", "Login", FormMethod.Post))
+@if (Context.Session.GetString("Username") is null)
 {
-    <div class="form-group">
-        @Html.LabelFor(model => model.StartDate, htmlAttributes: new { @class = "control-label" })
-        @Html.TextBoxFor(model => model.StartDate, new { @class = "form-control", type = "date" })
-        @Html.ValidationMessageFor(model => model.StartDate, "", new { @class = "text-danger" })
-    </div>
+    <h3>You must be logged in to view this page</h3>
+}
+else
+{
+    <h2>Game Renting</h2>
 
-    <div class="form-group">
-        @Html.LabelFor(model => model.FinishDate, htmlAttributes: new { @class = "control-label" })
-        @Html.TextBoxFor(model => model.FinishDate, new { @class = "form-control", type = "date" })
-        @Html.ValidationMessageFor(model => model.FinishDate, "", new { @class = "text-danger" })
-    </div>
-    
-    <input type="hidden" name="gameId" value="@Model.GameId" />
-
-    <input type="submit" value="Reserve" class="btn btn-primary" />
-                                                                
-
-    if (Model.Reservations != null && Model.Reservations.Any())
+    @using (Html.BeginForm("ReserveGame", "Login", FormMethod.Post))
     {
-        <h3>Existing Reservations</h3>
-        <table class="table">
-            <tr>
-                <th>Reservation ID</th>
-                <th>Start Date</th>
-                <th>Finish Date</th>
-            </tr>
-            @foreach (var reservation in Model.Reservations)
-            {
+        <div class="form-group">
+            @Html.LabelFor(model => model.StartDate, htmlAttributes: new { @class = "control-label" })
+            @Html.TextBoxFor(model => model.StartDate, new { @class = "form-control", type = "date" })
+            @Html.ValidationMessageFor(model => model.StartDate, "", new { @class = "text-danger" })
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.FinishDate, htmlAttributes: new { @class = "control-label" })
+            @Html.TextBoxFor(model => model.FinishDate, new { @class = "form-control", type = "date" })
+            @Html.ValidationMessageFor(model => model.FinishDate, "", new { @class = "text-danger" })
+        </div>
+        
+        <input type="hidden" name="gameId" value="@Model.GameId" />
+
+        <input type="submit" value="Reserve" class="btn btn-primary" />
+                                                                    
+
+        if (Model.Reservations != null && Model.Reservations.Any())
+        {
+            <h3>Existing Reservations</h3>
+            <table class="table">
                 <tr>
-                    <td>@reservation.ReservationId</td>
-                    <td>@reservation.StartDate.ToShortDateString()</td>
-                    <td>@reservation.FinishDate.ToShortDateString()</td>
+                    <th>Reservation ID</th>
+                    <th>Start Date</th>
+                    <th>Finish Date</th>
+                    <th>Cancel Reservation</th>
                 </tr>
-            }
-        </table>
+                @foreach (var reservation in Model.Reservations)
+                {
+                    <tr>
+                        <td>@reservation.ReservationId</td>
+                        <td>@reservation.StartDate.ToShortDateString()</td>
+                        <td>@reservation.FinishDate.ToShortDateString()</td>
+                        <td>
+                            @if (Context.Session.GetString("Admin") == "true" || reservation.User == Context.Session.GetString("Username"))
+                            {
+                                @Html.ActionLink("Cancel", "CancelReservation", new { reservationId = reservation.ReservationId, startDate = reservation.StartDate, endDate = reservation.FinishDate }, new { @class = "btn btn-danger" })
+                            }
+                        </td>
+                    </tr>
+                }
+            </table>
+        }
     }
 }
+
 
 @if (ViewBag.Error != null)
 {

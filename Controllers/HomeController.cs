@@ -360,7 +360,7 @@ public class LoginController : Controller
             List<GameBrowserModel.TaggedGame> filteredGames = new List<GameBrowserModel.TaggedGame>();
             foreach (var game in model.AllGames)
             {
-                if (searchFilter is not null && !game.Name.Contains(searchFilter)) continue;
+                if (searchFilter is not null && !game.Name.ToLower().Contains(searchFilter.ToLower())) continue;
                 bool containsAllTags = true;
                 if (tagsFilter is not [""])
                 {
@@ -741,6 +741,27 @@ public class LoginController : Controller
         
         
 
+        return RedirectToAction("RentalManager");
+    }
+
+    public IActionResult CancelReservation(int reservationid, DateTime startDate, DateTime endDate)
+    {
+        using (var connection = new SqliteConnection("Data Source=" + data_base_name))
+        {
+            connection.Open();
+            var command = connection.CreateCommand();
+            // delete the reservation that has the id we got from the form and has the right date
+            command.CommandText = "DELETE FROM RentedGames WHERE rented_game = " + reservationid + " AND rented_from = '" + startDate.ToString("yyyy-MM-dd") + "' AND rented_to = '" + endDate.ToString("yyyy-MM-dd") + "';";
+            try
+            {
+                command.ExecuteNonQuery();
+            }
+            catch (Exception e)
+            {
+                ViewBag.Error = e.Message;
+            }
+            
+        }
         return RedirectToAction("RentalManager");
     }
 }
