@@ -22,6 +22,7 @@ public class LoginController : Controller
     public IActionResult Index()
     {
         ViewData["Username"] = HttpContext.Session.GetString("Username");
+        ViewData["Admin"] = HttpContext.Session.GetString("Admin");
 
         return View();
     }
@@ -42,6 +43,22 @@ public class LoginController : Controller
         return View();
     }
 
+    public void CheckAdmin(string username)
+    {
+        using var connection = new SqliteConnection("Data Source=" + data_base_name);
+        connection.Open();
+        var command = connection.CreateCommand();
+        command.CommandText = "SELECT COUNT(*) FROM Users WHERE username = @Username AND role = 'admin';";
+        command.Parameters.AddWithValue("@Username", username);
+        var admin = command.ExecuteScalar();
+        if (admin != null)
+        {
+            if ((long)admin > 0)
+            {
+                HttpContext.Session.SetString("Admin", "true");
+            }
+        }
+    }
 
     [HttpPost]
     [Route("/login")]
@@ -65,6 +82,11 @@ public class LoginController : Controller
                 ViewData["Username"] = username;
                 ViewData["Message"] = "Login successful";
                 HttpContext.Session.SetString("Username", username);
+                CheckAdmin(username);
+                if (HttpContext.Session.GetString("Admin") == "true")
+                {
+                    ViewData["Admin"] = "true";
+                }
             }
             else
             {
@@ -109,7 +131,7 @@ public class LoginController : Controller
 
             // Check if username already exists
             var commandCheckIfRegistered = connection.CreateCommand();
-            commandCheckIfRegistered.CommandText = "SELECT COUNT(*) FROM Users WHERE Username = @Username;";
+            commandCheckIfRegistered.CommandText = "SELECT COUNT(*) FROM Users WHERE username = @Username;";
             commandCheckIfRegistered.Parameters.AddWithValue("@Username", username);
             var reader = commandCheckIfRegistered.ExecuteReader();
             if (reader.Read())
@@ -124,7 +146,7 @@ public class LoginController : Controller
             // Register user
 
             var command = connection.CreateCommand();
-            command.CommandText = "INSERT INTO Users (Username, Password, IsAdmin) VALUES (@Username, @Password, User);";
+            command.CommandText = "INSERT INTO Users (username, password, role) VALUES (@Username, @Password, 'user');";
             command.Parameters.AddWithValue("@Username", username);
             command.Parameters.AddWithValue("@Password", MD5Hash(password));
 
@@ -136,6 +158,7 @@ public class LoginController : Controller
         return View();
     }
 
+    [Route("/databaseeditor")]
     public IActionResult DataBaseEditor()
     {
         DatabaseEditorModel model = new DatabaseEditorModel();
@@ -143,6 +166,7 @@ public class LoginController : Controller
     }
     
     [HttpPost]
+    [Route("/databaseeditor")]
     public IActionResult DataBaseEditor(IFormCollection form)
     {
         DatabaseEditorModel model = new DatabaseEditorModel();
@@ -215,8 +239,8 @@ public class LoginController : Controller
 
 
     /* -------------------------------- View data ------------------------------- */
-    [Route("/data")]
-    public IActionResult Data()
+    [Route("/browser")]
+    public IActionResult Browser()
     {
         ViewData["username"] = HttpContext.Session.GetString("Username");
         if(string.IsNullOrEmpty((string?)ViewData["username"]))
@@ -226,13 +250,13 @@ public class LoginController : Controller
         {
             connection.Open();
             var command = connection.CreateCommand();
-            command.CommandText = "SELECT * FROM Games";
+            command.CommandText = "SELECT * FROM Boardgames";
             var reader = command.ExecuteReader();
 
             List<String[]> data = new List<String[]>();
             while (reader.Read())
             {
-                var rowData = new String[] { reader.GetInt32(0).ToString(), reader.GetString(1), reader.GetString(2), reader.GetString(3) };
+                var rowData = new String[] { reader.GetInt32(0).ToString(), reader.GetString(1), reader.GetString(2) };
                 data.Add(rowData);
             }
             
@@ -243,8 +267,8 @@ public class LoginController : Controller
 
     /* -------------------------------- Search data -------------------------------- */
     [HttpPost]
-    [Route("/data")]
-    public IActionResult Data(IFormCollection form)
+    [Route("/browser")]
+    public IActionResult Browser(IFormCollection form)
     {
         ViewData["username"] = HttpContext.Session.GetString("Username");
         if(string.IsNullOrEmpty(ViewData["username"]?.ToString()))
@@ -254,14 +278,14 @@ public class LoginController : Controller
         {
             connection.Open();
             var command = connection.CreateCommand();
-            command.CommandText = "SELECT * FROM Games WHERE Name LIKE @Name;";
+            command.CommandText = "SELECT * FROM Boardgames WHERE title LIKE @Name;";
             command.Parameters.AddWithValue("@Name", "%" + form["search"].ToString() + "%");
             var reader = command.ExecuteReader();
 
             List<String[]> data = new List<String[]>();
             while (reader.Read())
             {
-                var rowData = new String[] { reader.GetInt32(0).ToString(), reader.GetString(1), reader.GetString(2), reader.GetString(3) };
+                var rowData = new String[] { reader.GetInt32(0).ToString(), reader.GetString(1), reader.GetString(2) };
                 data.Add(rowData);
             }
             
@@ -323,12 +347,25 @@ public class LoginController : Controller
             command.CommandText += ") VALUES (";
             for (int i = 1; i < newValues.Count; i++)
             {
-                if (newValues[i] is null)
-                    command.CommandText += "NULL";
+                if (newValues[0] == "Users" && i == 3)
+                {
+                    if (newValues[i] is null)
+                        command.CommandText += "NULL";
+                    else
+                        command.CommandText += "'" + MD5Hash(newValues[i]) + "'";
+                    if( i != newValues.Count - 1)
+                        command.CommandText += ", ";
+                }
                 else
-                    command.CommandText += "'" + newValues[i] + "'";
-                if (i != newValues.Count - 1)
-                    command.CommandText += ", ";
+                {
+                    if (newValues[i] is null)
+                        command.CommandText += "NULL";
+                    else
+                        command.CommandText += "'" + newValues[i] + "'";
+                    if (i != newValues.Count - 1)
+                        command.CommandText += ", ";
+                }
+                
             }
             command.CommandText += ");";
             // execute the command, if it fails add the error to ViewBag

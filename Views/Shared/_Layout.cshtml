@@ -22,35 +22,35 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Login" asp-action="Index">Home</a>
                         </li>
-                        @if (ViewData["Username"] is null)
+                        @if (Context.Session.GetString("Username") is null)
                         {
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Login" asp-action="Register">Register</a>
                             </li>
                         }
-                        @if (ViewData["Username"] is null)
+                        @if (Context.Session.GetString("Username") is null)
                         {
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Login" asp-action="Login">Login</a>
                             </li>
                                                         
                         }
-                        @if (ViewData["Username"] is not null)
+                        @if (Context.Session.GetString("Username") is not null)
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Login" asp-action="Data">Data</a>
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Login" asp-action="Browser">Browse games</a>
                             </li>
                         }
-                        @if (ViewData["Username"] is not null)
+                        @if (Context.Session.GetString("Username") is not null)
                         {
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Login" asp-action="Login">Logout</a>
                             </li>
                         }
-                        @if (ViewData["Username"] is not null)
+                        @if (Context.Session.GetString("Username") is not null && Context.Session.GetString("Admin") == "true")
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Login" asp-action="DatabaseEditor">DBE</a>
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Login" asp-action="DatabaseEditor">Database Editor</a>
                             </li>
                         }
                     </ul>

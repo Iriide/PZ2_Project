@@ -1,10 +1,5 @@
 @model DatabaseEditorModel
 
-@{
-    ViewBag.Title = "title";
-    Layout = "_Layout";
-}
-
 @using (Html.BeginForm("DataBaseEditor", "Login", FormMethod.Post))
 {
     @Html.LabelFor(model => model.SelectedTable, "Select an item:")
