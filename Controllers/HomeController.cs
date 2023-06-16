@@ -136,7 +136,65 @@ public class LoginController : Controller
         return View();
     }
 
+    public IActionResult DataBaseEditor()
+    {
+        DatabaseEditorModel model = new DatabaseEditorModel();
+        return View(model);
+    }
+    
+    [HttpPost]
+    public IActionResult DataBaseEditor(IFormCollection form)
+    {
+        DatabaseEditorModel model = new DatabaseEditorModel();
+        string target = form["SelectedTable"].ToString();
+        List<List<string>> formData = new List<List<string>>();
+        using(var connection = new SqliteConnection("Data Source=" + data_base_name))
+        {
+            switch (target)
+            {
+                case "Users":
+                    formData.Add(new List<string>() { "id", "username", "password", "role" });
+                    break;
 
+                case "Boardgames":
+                    formData.Add(new List<string>() { "id", "title", "description" });
+                    break;
+
+                case "Tags":
+                    formData.Add(new List<string>() { "id", "tag_name" });
+                    break;
+
+                case "GameTags":
+                    formData.Add(new List<string>() { "tag_id", "game_id" });
+                    break;
+
+                case "Rental":
+                    formData.Add(new List<string>() { "rental_game", "game_id", "boardgame_id" });
+                    break;
+
+                case "RentedGames":
+                    formData.Add(new List<string>() { "rented_game", "rented_by", "rented_from", "rented_to" });
+                    break;
+            }
+            connection.Open();
+            var command = connection.CreateCommand();
+            command.CommandText = "SELECT * FROM " + target + ";";
+            var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                var rowData = new String[reader.FieldCount];
+                for(int i = 0; i < reader.FieldCount; i++)
+                {
+                    rowData[i] = reader.GetString(i);
+                } 
+                formData.Add(rowData.ToList());
+            }
+
+            model.ProcessRawData(formData, target);
+            model.SelectedTable = target;
+        }
+        return View("DataBaseBrowser", model);
+    }
 
     private string MD5Hash(string input)
     {
@@ -220,5 +278,70 @@ public class LoginController : Controller
     public IActionResult Error()
     {
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+    }
+
+    public IActionResult SendRequestToDatabase(List<string> newValues)
+    {
+        using (var connection = new SqliteConnection("Data Source=" + data_base_name))
+        {
+            // add the newValues to the database, at newValues[0] is the table name, if any of the values is empy insert NULL
+            // first obtain the column names
+            List<string> columnNames;
+            switch (newValues[0])
+            {
+                case "Users":
+                    columnNames = new List<string>() { "id", "username", "password", "role" };
+                    break;
+                case "Boardgames":
+                    columnNames = new List<string>() { "id", "title", "description" };
+                    break;
+                case "Tags":
+                    columnNames = new List<string>() { "id", "tag_name" };
+                    break;
+                case "GameTags":
+                    columnNames = new List<string>() { "tag_id", "game_id" };
+                    break;
+                case "Rental":
+                    columnNames = new List<string>() { "rental_game", "game_id", "boardgame_id" };
+                    break;
+                case "RentedGames":
+                    columnNames = new List<string>() { "rented_game", "rented_by", "rented_from", "rented_to" };
+                    break;
+                default:   
+                    columnNames = new List<string>() { "id", "username", "password", "role" };
+                    break;
+            }
+            connection.Open();
+            var command = connection.CreateCommand();
+            command.CommandText = "INSERT INTO " + newValues[0] + "(";
+            for (int i = 0; i < columnNames.Count; i++)
+            {
+                command.CommandText += columnNames[i];
+                if (i != columnNames.Count - 1)
+                    command.CommandText += ", ";
+            }
+            command.CommandText += ") VALUES (";
+            for (int i = 1; i < newValues.Count; i++)
+            {
+                if (newValues[i] is null)
+                    command.CommandText += "NULL";
+                else
+                    command.CommandText += "'" + newValues[i] + "'";
+                if (i != newValues.Count - 1)
+                    command.CommandText += ", ";
+            }
+            command.CommandText += ");";
+            // execute the command, if it fails add the error to ViewBag
+            try
+            {
+                command.ExecuteNonQuery();
+            }
+            catch (Exception e)
+            {
+                ViewBag.Error = e.Message;
+            }
+            
+        }
+        return RedirectToAction("DataBaseEditor");
     }
 }

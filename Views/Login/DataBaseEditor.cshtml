@@ -1,0 +1,22 @@
+@model DatabaseEditorModel
+
+@{
+    ViewBag.Title = "title";
+    Layout = "_Layout";
+}
+
+@using (Html.BeginForm("DataBaseEditor", "Login", FormMethod.Post))
+{
+    @Html.LabelFor(model => model.SelectedTable, "Select an item:")
+    @Html.DropDownListFor(model => model.SelectedTable, Model.TableList, "Please select an item", new { @class = "form-control" })
+
+    <br />
+
+    <input type="submit" value="Submit" class="btn btn-primary" />
+}
+
+@if (!string.IsNullOrEmpty(ViewBag.Error))
+{
+    <p>@ViewBag.Error</p>
+}
+

@@ -17,46 +17,89 @@ internal class Program
 
         using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
         connection.Open();
-        var Command = connection.CreateCommand();
-
-        const string dropTable = "DROP TABLE IF EXISTS Warehouse; DROP TABLE IF EXISTS IsAvaiable; DROP TABLE IF EXISTS Games; ";
-        Command.CommandText = dropTable;
-        Command.ExecuteNonQuery();
-
-        // string createTable = "DROP TABLE IF EXISTS Users; CREATE TABLE IF NOT EXISTS Users (id INTEGER PRIMARY KEY AUTOINCREMENT, Username TEXT NOT NULL, Password TEXT NOT NULL);";
-        const string createTable = "CREATE TABLE IF NOT EXISTS Users (id INTEGER PRIMARY KEY AUTOINCREMENT, Username TEXT NOT NULL, Password TEXT NOT NULL, Privilege TEXT NOT NULL);";
-        Command.CommandText = createTable;
-        Command.ExecuteNonQuery();
-
-        const string gamesTable = "CREATE TABLE IF NOT EXISTS Games (id INTEGER PRIMARY KEY AUTOINCREMENT, Name TEXT NOT NULL, Description TEXT NOT NULL, Price REAL NOT NULL);";
-        Command.CommandText = gamesTable;
-        Command.ExecuteNonQuery();
-
-        const string isAvaiableTable = "CREATE TABLE IF NOT EXISTS IsAvaiable (id INTEGER PRIMARY KEY AUTOINCREMENT, GameId INTEGER NOT NULL, Avaiable BOOLEAN NOT NULL, FOREIGN KEY(GameId) REFERENCES Games(id));";
-        Command.CommandText = isAvaiableTable;
-        Command.ExecuteNonQuery();
-
-        const string warehouseTable = "CREATE TABLE IF NOT EXISTS Warehouse (id INTEGER PRIMARY KEY AUTOINCREMENT, GameId INTEGER NOT NULL, Amount INTEGER NOT NULL, FOREIGN KEY(GameId) REFERENCES Games(id));";
-        Command.CommandText = warehouseTable;
-        Command.ExecuteNonQuery();
-        
-        const string adminQuery = "SELECT * FROM Users WHERE Username = \"admin\";";
-        Command.CommandText = adminQuery;
-        var reader = Command.ExecuteReader();
-        if (!reader.HasRows)
+        using (var command = connection.CreateCommand())
         {
-            reader.Close();
-            string insertUser = "INSERT INTO Users (Username, Password, Privilege) VALUES ('admin', '" + MD5Hash("admin") + "', 'admin');";
-            Command.CommandText = insertUser;
-            Command.ExecuteNonQuery();
+            // Create Users table
+                command.CommandText = @"
+                    CREATE TABLE IF NOT EXISTS Users (
+                        id INTEGER PRIMARY KEY,
+                        username TEXT,
+                        password TEXT,
+                        role TEXT
+                    );";
+                command.ExecuteNonQuery();
+
+                // Create Boardgames table
+                command.CommandText = @"
+                    CREATE TABLE IF NOT EXISTS Boardgames (
+                        id INTEGER PRIMARY KEY,
+                        title TEXT UNIQUE,
+                        description TEXT
+                    );";
+                command.ExecuteNonQuery();
+
+                // Create Tags table
+                command.CommandText = @"
+                    CREATE TABLE IF NOT EXISTS Tags (
+                        id INTEGER PRIMARY KEY,
+                        tag_name TEXT UNIQUE
+                    );";
+                command.ExecuteNonQuery();
+
+                // Create GameTags table
+                command.CommandText = @"
+                    CREATE TABLE IF NOT EXISTS GameTags (
+                        tag_id INTEGER,
+                        game_id INTEGER,
+                        FOREIGN KEY (tag_id) REFERENCES Tags(id),
+                        FOREIGN KEY (game_id) REFERENCES Boardgames(id)
+                    );";
+                command.ExecuteNonQuery();
+
+                // Create Rental table
+                command.CommandText = @"
+                    CREATE TABLE IF NOT EXISTS Rental (
+                        rental_game INTEGER PRIMARY KEY,
+                        game_id INTEGER,
+                        boardgame_id INTEGER,
+                        FOREIGN KEY (game_id) REFERENCES Boardgames(id),
+                        FOREIGN KEY (boardgame_id) REFERENCES Boardgames(id)
+                    );";
+                command.ExecuteNonQuery();
+
+                // Create RentedGames table
+                command.CommandText = @"
+                    CREATE TABLE IF NOT EXISTS RentedGames (
+                        rented_game INTEGER,
+                        rented_by INTEGER,
+                        rented_from DATETIME,
+                        rented_to DATETIME,
+                        FOREIGN KEY (rented_game) REFERENCES Rental(rental_game),
+                        FOREIGN KEY (rented_by) REFERENCES Users(id)
+                    );";
+                command.ExecuteNonQuery();
+            
+                const string adminQuery = "SELECT * FROM Users WHERE Username = \"admin\";";
+                command.CommandText = adminQuery;
+                var reader = command.ExecuteReader();
+                if (!reader.HasRows)
+                {
+                    reader.Close();
+                    string insertUser = "INSERT INTO Users (username, password, role) VALUES ('admin','" + MD5Hash("admin") + "', 'admin');";
+                    command.CommandText = insertUser;
+                    command.ExecuteNonQuery();
+                }
+                reader.Close();
         }
-        reader.Close();
+        
+        
 
         connection.Close();
 
-        ReadData("Data/games.csv", "Games", new string[] { "Name", "Description", "Price" });
-        ReadData("Data/isAvaiable.csv", "IsAvaiable", new string[] { "GameId", "Avaiable" });
-        ReadData("Data/warehouse.csv", "Warehouse", new string[] { "GameId", "Amount" });
+        ReadData("Data/games.csv", "Boardgames",  new string[] { "title", "description" });
+        ReadData("Data/tags.csv", "Tags",  new string[] { "tag_name" });
+        //readData("Data/game_tags.csv", "GameTags", false, new string[] { "tag_id", "game_id" });
+        //readData("Data/rental.csv", "Rental", true, new string[] { "game_id", "boardgame_id" });
 
         /* -------------------------------------------------------------------------- */
         /*                                     MVC                                    */
@@ -160,16 +203,23 @@ internal class Program
             insert += ") VALUES (";
             for (int i = 0; i < values.Length; i++)
             {
-                insert += "'" + values[i] + "'";
+                insert += "\"" + values[i] + "\"";
                 if (i != values.Length - 1)
                 {
                     insert += ", ";
                 }
             }
             insert += ");";
-            var command = connection.CreateCommand();
-            command.CommandText = insert;
-            command.ExecuteNonQuery();
+            try
+            {
+                using var command = connection.CreateCommand();
+                command.CommandText = insert;
+                command.ExecuteNonQuery();
+            }catch(SqliteException e)
+            {
+                Console.WriteLine(e.Message);
+            }
+            
         }
         connection.Close();
 

@@ -47,6 +47,12 @@
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Login" asp-action="Login">Logout</a>
                             </li>
                         }
+                        @if (ViewData["Username"] is not null)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Login" asp-action="DatabaseEditor">DBE</a>
+                            </li>
+                        }
                     </ul>
                 </div>
             </div>
