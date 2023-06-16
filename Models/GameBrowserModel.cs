@@ -16,6 +16,7 @@ public class GameBrowserModel
         }
     }
 
+    public List<(string, int)> AllTags = new List<(string, int)>();
     public List<TaggedGame> AllGames = new List<TaggedGame>();
     public List<TaggedGame> DisplayedGames = new List<TaggedGame>();
 }

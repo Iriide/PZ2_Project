@@ -9,35 +9,50 @@
 }
 else
 {
-    <form method="post" action="/Browser">
-        <input type="text" name="search"/>
-        <input type="submit" value="Search"/>
-    </form>
-
-    <ul>
-        @foreach (var item in Model.AllGames)
-        {
-            <li>
-                @item.Name: @item.Description
+    <form method="post" action="/Login/FilterResults">
+        <input type="text" name="search" />
+        <input type="submit" value="Search" />
+        
+        <div class="row">
+            <div class="col-md-4">
                 <ul>
-                    @foreach (var tag in item.Tags)
+                    @foreach (var tag in Model.AllTags)
                     {
                         <li>
-                            @tag
-                            @if (Context.Session.GetString("Admin") == "true")
-                            {
-                                <form method="post" action="/Login/RemoveTag">
-                                    <input type="hidden" name="boardGameName" value="@item.Name"/>
-                                    <input type="hidden" name="tagName" value="@tag"/>
-                                    <input type="submit" value="Remove"/>
-                                </form>
-                            }
+                            @tag.Item1
+                            <input type="checkbox" name="selectedTags" value="@tag.Item1" />
                         </li>
                     }
                 </ul>
-            </li>
-        }
-    </ul>
+            </div>
+            <div class="col-md-8">
+                <ul>
+                    @foreach (var item in Model.DisplayedGames)
+                    {
+                        <li>
+                            @item.Name: @item.Description
+                            <ul>
+                                @foreach (var tag in item.Tags)
+                                {
+                                    <li>
+                                        @tag
+                                        @if (Context.Session.GetString("Admin") == "true")
+                                        {
+                                            <form method="post" action="/Login/RemoveTag">
+                                                <input type="hidden" name="boardGameName" value="@item.Name" />
+                                                <input type="hidden" name="tagName" value="@tag" />
+                                                <input type="submit" value="Remove" />
+                                            </form>
+                                        }
+                                    </li>
+                                }
+                            </ul>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </form>
 
     <h>Logged in as @ViewData["username"]</h>
 }

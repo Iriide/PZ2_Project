@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
 using lab10.Models;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace lab10.Controllers;
 
@@ -312,6 +313,20 @@ public class LoginController : Controller
 
         GameBrowserModel model = new GameBrowserModel();
 
+        using (var connection = new SqliteConnection("Data Source=" + data_base_name)) 
+        {
+            connection.Open();
+            var command = connection.CreateCommand();
+            // get all tags and add them to model
+            command.CommandText = "SELECT * FROM Tags;";
+            var reader = command.ExecuteReader();
+            // add them to model.AllTags which is a list of (string, int) tuples
+            while (reader.Read())
+            {
+                model.AllTags.Add((reader.GetString(1), reader.GetInt32(0)));
+            }
+        } 
+
         using (var connection = new SqliteConnection("Data Source=" + data_base_name))
         {
             connection.Open();
@@ -338,7 +353,31 @@ public class LoginController : Controller
             }
         }
 
-        model.DisplayedGames = model.AllGames;
+        if (TempData["searchFilter"] != null || TempData["tagsFilter"] != null)
+        {
+            var searchFilter = TempData["searchFilter"].ToString();
+            var tagsFilter = TempData["tagsFilter"].ToString().Split(',');
+            List<GameBrowserModel.TaggedGame> filteredGames = new List<GameBrowserModel.TaggedGame>();
+            foreach (var game in model.AllGames)
+            {
+                if (searchFilter is not null && !game.Name.Contains(searchFilter)) continue;
+                bool containsAllTags = true;
+                if (tagsFilter is not [""])
+                {
+                    if (tagsFilter.Any(tag => !game.Tags.Contains(tag)))
+                    {
+                        containsAllTags = false;
+                    }
+                }
+
+                if (containsAllTags)
+                {
+                    filteredGames.Add(game);
+                }
+            }
+            model.DisplayedGames = filteredGames;
+            
+        }else model.DisplayedGames = model.AllGames;
 
         return View(model);
     }
@@ -371,6 +410,13 @@ public class LoginController : Controller
         }
 
         return View();
+    }
+
+    public IActionResult FilterResults(IFormCollection form)
+    {
+        TempData["searchFilter"] = form["search"].ToString();
+        TempData["tagsFilter"] = form["selectedTags"].ToString();
+        return RedirectToAction("Browser");
     }
 
 
